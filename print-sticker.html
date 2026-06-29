@@ -56,7 +56,10 @@
         <div class="workspace">
             <div class="control-panel">
                 <label>รหัสสินค้า (ID):</label>
-                <input type="text" id="prodId" value="AL001" oninput="updatePreview()">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="prodId" value="AL001" oninput="updatePreview()" style="flex-grow: 1; margin-bottom: 8px;">
+                    <button class="btn" onclick="fetchProductInfo()" style="width: auto; padding: 10px 15px; margin-bottom: 8px; background: #e5e7eb; color: #374151;">ค้นหาข้อมูล</button>
+                </div>
                 
                 <label>ชื่อสินค้า:</label>
                 <input type="text" id="prodName" value="อลูมิเนียมเส้นหน้าตัด" oninput="updatePreview()">
@@ -81,7 +84,7 @@
                 <input type="text" id="prodQty" value="50 เส้น" placeholder="เช่น 50 เส้น, 10 กล่อง" oninput="updatePreview()">
 
                 <button class="btn btn-primary" onclick="generateStickerCode()">อัปเดตข้อมูล</button>
-                <button class="btn btn-success" onclick="window.print()">สั่งพิมพ์ฉลาก (78x103mm)</button>
+                <button class="btn btn-success" onclick="printSticker()">สั่งพิมพ์ฉลาก (78x103mm)</button>
             </div>
             <div class="preview-panel">
                 <div id="sticker">
@@ -116,6 +119,9 @@
     <script>
         // ⚠️ เปลี่ยน URL เป็นลิงก์ GitHub Pages ของคุณ ⚠️
         const GITHUB_PAGES_URL = "https://jarupat7.github.io/pinklao-sticker/"; 
+        // ⚠️ ลิงก์ Web App URL ที่ได้จาก Google Apps Script ⚠️
+        const API_URL = "https://script.google.com/macros/s/AKfycbxHmArj4bdz9KWBkR8wQ_ZJBhSgGl8XjTbkstDT6p3X_JHjAq-d7AO4e76FexMhhWR_/exec";
+
         const qr = new QRCode(document.getElementById("qrcode"), { width: 160, height: 160, correctLevel: QRCode.CorrectLevel.H });
 
         function updatePreview() {
@@ -147,6 +153,93 @@
             // ฝังจำนวนเข้าไปใน URL ของ QR Code ด้วย
             const targetUrl = `${GITHUB_PAGES_URL}?id=${encodeURIComponent(id)}&qty=${encodeURIComponent(qty)}`;
             qr.makeCode(targetUrl);
+        }
+
+        async function fetchProductInfo() {
+            const id = document.getElementById("prodId").value.trim();
+            if (!id) return alert("กรุณากรอกรหัสสินค้าก่อนค้นหา");
+            
+            const btn = document.querySelector('button[onclick="fetchProductInfo()"]');
+            const originalText = btn.innerText;
+            btn.innerText = "กำลังค้นหา...";
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_URL}?id=${id}`);
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    const p = result.data;
+                    document.getElementById("prodName").value = p.name || "";
+                    
+                    // ตั้งค่ายี่ห้อ
+                    if (p.brand) {
+                        const brandSelect = document.getElementById("brandName");
+                        for (let i = 0; i < brandSelect.options.length; i++) {
+                            if (brandSelect.options[i].value.toLowerCase() === p.brand.toLowerCase() || brandSelect.options[i].text.toLowerCase() === p.brand.toLowerCase()) {
+                                brandSelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // ตั้งค่าสี
+                    if (p.color) {
+                        const colorSelect = document.getElementById("colorName");
+                        let colorFound = false;
+                        for (let i = 0; i < colorSelect.options.length; i++) {
+                            if (colorSelect.options[i].value === p.color || colorSelect.options[i].text === p.color) {
+                                colorSelect.selectedIndex = i;
+                                colorFound = true;
+                                break;
+                            }
+                        }
+                        if (!colorFound) {
+                            const opt = document.createElement('option');
+                            opt.value = p.color;
+                            opt.text = p.color;
+                            opt.setAttribute('data-hex', '#808080'); // สีเทาเริ่มต้น
+                            colorSelect.add(opt);
+                            colorSelect.selectedIndex = colorSelect.options.length - 1;
+                        }
+                    }
+                    
+                    updatePreview();
+                    generateStickerCode();
+                } else {
+                    alert("ไม่พบข้อมูลสินค้ารหัสนี้ใน Google Sheet");
+                }
+            } catch (e) {
+                alert("เกิดข้อผิดพลาดในการดึงข้อมูล: " + e.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function printSticker() {
+            logPrintTransaction();
+            window.print();
+        }
+
+        async function logPrintTransaction() {
+            const id = document.getElementById("prodId").value.trim();
+            const name = document.getElementById("prodName").value.trim();
+            const brand = document.getElementById("brandName").value;
+            const colorSelect = document.getElementById("colorName");
+            const color = colorSelect.options[colorSelect.selectedIndex].text;
+            const qty = document.getElementById("prodQty").value.trim();
+            
+            if (!id) return;
+            
+            const logUrl = `${API_URL}?action=log&id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&brand=${encodeURIComponent(brand)}&color=${encodeURIComponent(color)}&qty=${encodeURIComponent(qty)}`;
+            
+            try {
+                // ส่งประวัติแบบเบื้องหลัง (Background Fetch) ไม่กวนใจผู้ใช้
+                fetch(logUrl, { mode: 'no-cors' });
+            } catch (e) {
+                console.error("Error logging print transaction:", e);
+            }
         }
         
         window.onload = () => { updatePreview(); generateStickerCode(); };
