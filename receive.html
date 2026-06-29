@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบรับเข้าสินค้า & พิมพ์สติกเกอร์ - ปิ่นเกล้าโลหะภัณฑ์</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        @media screen {
+            body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f6f9; padding: 30px; margin: 0; }
+            .admin-container { max-width: 1100px; margin: 0 auto; display: block; }
+            .header-banner { background: #1e3a8a; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+            .workspace { background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; }
+            .control-panel { width: 45%; padding-right: 30px; border-right: 1px solid #e5e7eb; }
+            .preview-panel { width: 55%; padding-left: 30px; text-align: center; }
+            label { display: block; margin-bottom: 8px; font-weight: 600; color: #4b5563; font-size: 14px; }
+            input, select { width: 100%; padding: 10px; margin-bottom: 18px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+            .readonly-field { background: #f3f4f6; color: #4b5563; cursor: not-allowed; }
+            .btn { width: 100%; padding: 12px; margin-bottom: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; }
+            .btn-primary { background: #1e3a8a; color: white; }
+            .btn-success { background: #10b981; color: white; }
+            .loading-text { font-style: italic; color: #6b7280; font-size: 14px; margin-bottom: 10px; }
+        }
+
+        /* โครงสร้างสติกเกอร์ 78mm x 103mm */
+        #sticker {
+            width: 78mm; height: 103mm; background: #ffffff; box-sizing: border-box;
+            padding: 6mm; display: flex; flex-direction: column; justify-content: space-between;
+            align-items: center; border: 1px dashed #9ca3af; overflow: hidden; margin: 0 auto;
+        }
+        .logo-area { width: 100%; text-align: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 3mm; margin-bottom: 2mm; }
+        .logo-text-main { font-size: 13pt; font-weight: 800; color: #1e3a8a; margin: 0; }
+        .logo-text-sub { font-size: 7pt; color: #4b5563; margin: 0.5mm 0 0 0; }
+        .content-area { width: 100%; flex-grow: 1; display: flex; flex-direction: column; align-items: center; padding-top: 2mm; }
+        .product-name-label { font-size: 8pt; color: #6b7280; align-self: flex-start; margin: 0; }
+        .product-name { font-size: 12pt; font-weight: 700; text-align: left; width: 100%; margin: 1mm 0 1mm 0; line-height: 1.3; }
+        .brand-row { display: flex; justify-content: space-between; width: 100%; margin-bottom: 3mm; align-items: center; }
+        .brand-name { font-size: 10pt; color: #1e3a8a; font-weight: bold; }
+        .qty-badge { font-size: 10pt; font-weight: bold; color: #d97706; background: #fef3c7; padding: 2px 6px; border-radius: 4px; border: 1px solid #fde68a; }
+        .color-info-box { width: 100%; display: flex; align-items: center; background: #f9fafb; border: 1px solid #e5e7eb; padding: 2mm; margin-bottom: 3mm; }
+        .color-swatch-preview { width: 10mm; height: 10mm; border: 1px solid #d1d5db; margin-right: 3mm; }
+        .color-text-details { display: flex; flex-direction: column; }
+        .color-title-label { font-size: 7pt; color: #6b7280; margin: 0; }
+        .color-name-value { font-size: 11pt; font-weight: 700; margin: 0; }
+        #qrcode img { width: 40mm !important; height: 40mm !important; }
+        .sticker-footer { font-size: 7.5pt; color: #6b7280; text-align: center; border-top: 1px dashed #e5e7eb; width: 100%; padding-top: 2mm; margin-top: 1mm; }
+
+        @media print {
+            @page { size: 78mm 103mm; margin: 0; }
+            
+            /* ซ่อนหน้าจอป้อนข้อมูล */
+            .header-banner, 
+            .control-panel { 
+                display: none !important; 
+            }
+            
+            body {
+                visibility: hidden;
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+            
+            #sticker, 
+            #sticker * {
+                visibility: visible;
+            }
+            
+            #sticker {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 78mm;
+                height: 103mm;
+                border: none !important;
+                padding: 6mm !important;
+                margin: 0 !important;
+                box-sizing: border-box;
+                display: flex !important;
+                flex-direction: column;
+                justify-content: space-between;
+                align-items: center;
+                background: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="header-banner"><h1>ระบบรับเข้าสินค้าคลัง & พิมพ์สติกเกอร์ — ปิ่นเกล้าโลหะภัณฑ์</h1></div>
+        <div class="workspace">
+            <div class="control-panel">
+                <div id="loadingText" class="loading-text">กำลังโหลดรายการสินค้าจาก Google Sheet...</div>
+                
+                <label>เลือกสินค้า (ดึงจากบัญชีสินค้า):</label>
+                <select id="productSelect" onchange="onProductSelect()" disabled>
+                    <option value="">-- กรุณาเลือกสินค้า --</option>
+                </select>
+
+                <label>รหัสสินค้า (ID):</label>
+                <input type="text" id="prodId" class="readonly-field" readonly>
+                
+                <label>ชื่อสินค้า:</label>
+                <input type="text" id="prodName" class="readonly-field" readonly>
+                
+                <label>ยี่ห้อ (Brand):</label>
+                <input type="text" id="brandName" class="readonly-field" readonly>
+
+                <label>สี / เฉดสี:</label>
+                <input type="text" id="colorName" class="readonly-field" readonly>
+
+                <label>วันที่รับเข้า (Date):</label>
+                <input type="date" id="receiveDate" onchange="updatePreview()">
+
+                <label>จำนวนที่รับเข้า (Quantity):</label>
+                <input type="number" id="prodQty" value="50" min="1" oninput="updatePreview()">
+
+                <label>หน่วยนับ (Unit):</label>
+                <select id="prodUnit" onchange="updatePreview()">
+                    <option value="เส้น">เส้น</option>
+                    <option value="กล่อง">กล่อง</option>
+                    <option value="ม้วน">ม้วน</option>
+                    <option value="ชิ้น">ชิ้น</option>
+                    <option value="ถุง">ถุง</option>
+                    <option value="custom">-- กำหนดเอง --</option>
+                </select>
+                <input type="text" id="prodUnitCustom" placeholder="ระบุหน่วยนับของคุณ" style="display:none; margin-top: -10px;" oninput="updatePreview()">
+
+                <button class="btn btn-primary" onclick="generateStickerCode()">อัปเดตตัวอย่าง QR</button>
+                <button class="btn btn-success" id="btnSavePrint" onclick="saveAndPrint()" disabled>บันทึกรับเข้าคลัง & พิมพ์ฉลาก</button>
+            </div>
+            <div class="preview-panel">
+                <div id="sticker">
+                    <div class="logo-area">
+                        <div class="logo-text-main">ปิ่นเกล้าโลหะภัณฑ์</div>
+                        <div class="logo-text-sub">PINKLAO METAL CO., LTD.</div>
+                    </div>
+                    <div class="content-area">
+                        <p class="product-name-label">ชื่อสินค้า / PRODUCT:</p>
+                        <div class="product-name" id="lblTitle">-</div>
+                        
+                        <div class="brand-row">
+                            <div class="brand-name" id="lblBrand">-</div>
+                            <div class="qty-badge" id="lblQty">จำนวน: -</div>
+                        </div>
+                        
+                        <div class="color-info-box">
+                            <div class="color-swatch-preview" id="swatchPreview"></div>
+                            <div class="color-text-details">
+                                <p class="color-title-label">เฉดสี / COLOR:</p>
+                                <p class="color-name-value" id="lblColor">-</p>
+                            </div>
+                        </div>
+                        <div id="qrcode"></div>
+                    </div>
+                    <div class="sticker-footer">สแกนเพื่อตรวจสอบรายละเอียดสินค้าเพิ่มเติม</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GITHUB_PAGES_URL = "https://jarupat7.github.io/pinklao-sticker/"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbxHmArj4bdz9KWBkR8wQ_ZJBhSgGl8XjTbkstDT6p3X_JHjAq-d7AO4e76FexMhhWR_/exec";
+
+        const qr = new QRCode(document.getElementById("qrcode"), { width: 160, height: 160, correctLevel: QRCode.CorrectLevel.H });
+        let productsDatabase = [];
+
+        // กำหนดรหัสสีตัวอย่างสำหรับการแสดงผล Swatch Preview ในหน้าจอ
+        const colorHexMapping = {
+            "อบนม": "#FDFCF0",
+            "อบดำ": "#2b2b2b",
+            "เทาซาฮาร่า": "#595959",
+            "อบฟ้า": "#4A90E2",
+            "สักทอง": "#C19A6B",
+            "มูจิ": "#E4D5B7",
+            "อบขาวนม": "#FDFCF0",
+            "ขาวนม": "#FDFCF0",
+            "ขาวฟ้า": "#E1F5FE",
+            "สีอบนม": "#FDFCF0"
+        };
+
+        // ตั้งค่าเริ่มต้นของวันที่เมื่อโหลดหน้าเว็บ
+        window.onload = async () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById("receiveDate").value = today;
+            
+            await fetchAllProducts();
+        };
+
+        // ดึงข้อมูลสินค้าทั้งหมดจาก Google Sheet เพื่อนำมาใส่ Dropdown
+        async function fetchAllProducts() {
+            try {
+                const response = await fetch(`${API_URL}?action=get_products`);
+                const result = await response.json();
+                
+                if (result.status === "success" && result.data.length > 0) {
+                    productsDatabase = result.data;
+                    const select = document.getElementById("productSelect");
+                    
+                    productsDatabase.forEach(p => {
+                        const opt = document.createElement("option");
+                        opt.value = p.id;
+                        opt.text = `[${p.id}] ${p.name || ''} - ${p.color || ''}`;
+                        select.add(opt);
+                    });
+                    
+                    select.disabled = false;
+                    document.getElementById("loadingText").style.display = "none";
+                } else {
+                    document.getElementById("loadingText").innerText = "ไม่พบข้อมูลสินค้าในแผ่นงาน Data";
+                }
+            } catch(e) {
+                console.error("Fetch products error:", e);
+                document.getElementById("loadingText").innerText = "เกิดข้อผิดพลาดในการโหลดข้อมูลสินค้าจาก Google Sheet";
+            }
+        }
+
+        // เมื่อผู้ใช้เลือกสินค้าจาก Dropdown
+        function onProductSelect() {
+            const select = document.getElementById("productSelect");
+            const selectedId = select.value;
+            
+            if (!selectedId) {
+                clearFields();
+                return;
+            }
+            
+            const p = productsDatabase.find(item => item.id.toString() === selectedId.toString());
+            if (p) {
+                document.getElementById("prodId").value = p.id;
+                document.getElementById("prodName").value = p.name || "";
+                document.getElementById("brandName").value = p.brand || "";
+                document.getElementById("colorName").value = p.color || "";
+                
+                // เก็บรายละเอียดวิธีใช้และข้อควรระวังไว้เป็น Attribute ของ select
+                select.setAttribute("data-instructions", p.วิธีใช้ || p.instructions || "");
+                select.setAttribute("data-precautions", p.ข้อควรระวัง || p.precautions || "");
+                
+                document.getElementById("btnSavePrint").disabled = false;
+                
+                updatePreview();
+                generateStickerCode();
+            }
+        }
+
+        function clearFields() {
+            document.getElementById("prodId").value = "";
+            document.getElementById("prodName").value = "";
+            document.getElementById("brandName").value = "";
+            document.getElementById("colorName").value = "";
+            document.getElementById("btnSavePrint").disabled = true;
+            
+            document.getElementById("lblTitle").innerText = "-";
+            document.getElementById("lblBrand").innerText = "-";
+            document.getElementById("lblQty").innerText = "จำนวน: -";
+            document.getElementById("lblColor").innerText = "-";
+            document.getElementById("swatchPreview").style.backgroundColor = "transparent";
+            qr.clear();
+        }
+
+        function getSelectedUnit() {
+            const unitSelect = document.getElementById("prodUnit");
+            const customInput = document.getElementById("prodUnitCustom");
+            
+            if (unitSelect.value === "custom") {
+                customInput.style.display = "block";
+                return customInput.value.trim() || "หน่วย";
+            } else {
+                customInput.style.display = "none";
+                return unitSelect.value;
+            }
+        }
+
+        function updatePreview() {
+            const id = document.getElementById("prodId").value;
+            if (!id) return;
+            
+            // อัปเดตข้อความพรีวิว
+            document.getElementById("lblTitle").innerText = document.getElementById("prodName").value;
+            document.getElementById("lblBrand").innerText = document.getElementById("brandName").value;
+            
+            const qty = document.getElementById("prodQty").value;
+            const unit = getSelectedUnit();
+            document.getElementById("lblQty").innerText = `จำนวน: ${qty} ${unit}`;
+            
+            const color = document.getElementById("colorName").value;
+            document.getElementById("lblColor").innerText = color;
+            
+            // ค้นหาสี Hex เพื่อแสดง swatch สีตัวอย่าง
+            let hex = "#FDFCF0"; // ค่าเริ่มต้นสีครีม
+            for (let key in colorHexMapping) {
+                if (color.includes(key)) {
+                    hex = colorHexMapping[key];
+                    break;
+                }
+            }
+            document.getElementById("swatchPreview").style.backgroundColor = hex;
+        }
+
+        function generateStickerCode() {
+            const id = document.getElementById("prodId").value.trim();
+            const qty = document.getElementById("prodQty").value.trim();
+            const unit = getSelectedUnit();
+            const date = document.getElementById("receiveDate").value;
+            
+            if (!id) return;
+            qr.clear();
+            
+            // ฝัง รหัส, จำนวน, หน่วยนับ, วันที่รับเข้า ใน QR Code URL ของลูกค้า
+            const targetUrl = `${GITHUB_PAGES_URL}index.html?id=${encodeURIComponent(id)}&qty=${encodeURIComponent(qty)}&unit=${encodeURIComponent(unit)}&date=${encodeURIComponent(date)}`;
+            qr.makeCode(targetUrl);
+        }
+
+        async function saveAndPrint() {
+            const id = document.getElementById("prodId").value.trim();
+            const name = document.getElementById("prodName").value.trim();
+            const brand = document.getElementById("brandName").value.trim();
+            const color = document.getElementById("colorName").value.trim();
+            const qty = document.getElementById("prodQty").value.trim();
+            const unit = getSelectedUnit();
+            const date = document.getElementById("receiveDate").value;
+            
+            const select = document.getElementById("productSelect");
+            const instructions = select.getAttribute("data-instructions") || "";
+            const precautions = select.getAttribute("data-precautions") || "";
+            
+            if (!id || !qty) return alert("กรุณาเลือกสินค้าและใส่จำนวนรับเข้าให้ครบถ้วน");
+            
+            // อัปเดตพรีวิวและ QR code ล่าสุดก่อนพิมพ์
+            updatePreview();
+            generateStickerCode();
+            
+            const btn = document.getElementById("btnSavePrint");
+            const originalText = btn.innerText;
+            btn.innerText = "กำลังบันทึกข้อมูลรับเข้า...";
+            btn.disabled = true;
+            
+            // ส่งบันทึกข้อมูลการรับเข้าคลังสินค้าไป Google Sheets (แผ่นงาน receiving)
+            const saveUrl = `${API_URL}?action=receive&id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&brand=${encodeURIComponent(brand)}&color=${encodeURIComponent(color)}&qty=${encodeURIComponent(qty)}&unit=${encodeURIComponent(unit)}&date=${encodeURIComponent(date)}&instructions=${encodeURIComponent(instructions)}&precautions=${encodeURIComponent(precautions)}`;
+            
+            try {
+                const response = await fetch(saveUrl);
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    console.log("บันทึกสำเร็จ");
+                    window.print();
+                } else {
+                    alert("บันทึกข้อมูลล้มเหลว: " + result.message);
+                }
+            } catch (e) {
+                console.error("Save error:", e);
+                if (confirm("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่อบันทึกประวัติการรับเข้าได้ (แต่คุณสามารถพิมพ์ฉลากได้)\n\nต้องการสั่งพิมพ์ฉลากต่อไปหรือไม่?")) {
+                    window.print();
+                }
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

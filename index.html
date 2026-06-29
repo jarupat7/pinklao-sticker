@@ -38,9 +38,14 @@
                 <div class="meta-item"><span class="meta-label">วันที่รับเข้า:</span><span id="prodDate">-</span></div>
             </div>
             
-            <div class="instruction-section">
-                <div class="instruction-title">รายละเอียด / วิธีใช้งาน</div>
+            <div class="instruction-section" style="margin-bottom: 15px;">
+                <div class="instruction-title">วิธีใช้งาน / INSTRUCTION</div>
                 <div id="instructions" class="instruction-text">-</div>
+            </div>
+
+            <div class="instruction-section" style="border-left-color: #dc3545; background-color: #fffefd;">
+                <div class="instruction-title" style="color: #dc3545;">ข้อควรระวัง / CAUTION</div>
+                <div id="precautions" class="instruction-text" style="color: #333;">-</div>
             </div>
         </div>
     </div>
@@ -53,6 +58,8 @@
             const urlParams = new URLSearchParams(window.location.search);
             const productId = urlParams.get('id');
             const qtyFromQR = urlParams.get('qty'); // ดึงจำนวนจาก QR Code
+            const unitFromQR = urlParams.get('unit'); // ดึงหน่วยจาก QR Code
+            const dateFromQR = urlParams.get('date'); // ดึงวันที่จาก QR Code
 
             if (!productId) return showError("ไม่พบรหัสสินค้า (ID) ใน URL");
 
@@ -65,13 +72,22 @@
                     document.getElementById("productName").innerText = p.name || "-";
                     document.getElementById("prodId").innerText = p.id || "-";
                     
-                    // แสดงจำนวน: ลำดับความสำคัญคือ 1. ค่าจาก QR Code -> 2. ค่าจากฐานข้อมูลชีต -> 3. ไม่ระบุ
-                    document.getElementById("prodQty").innerText = qtyFromQR ? qtyFromQR : (p.quantity || "ไม่ระบุ");
+                    // แสดงจำนวน: ค่าจาก QR Code (จำนวน + หน่วยนับ) หรือ ดึงจากชีต
+                    if (qtyFromQR) {
+                        document.getElementById("prodQty").innerText = `${qtyFromQR} ${unitFromQR || ""}`.trim();
+                    } else {
+                        document.getElementById("prodQty").innerText = p.quantity || "ไม่ระบุ";
+                    }
                     
                     document.getElementById("colorName").innerText = p.color || "-";
                     document.getElementById("brandDisplay").innerText = p.brand || "ปิ่นเกล้าโลหะภัณฑ์";
-                    document.getElementById("prodDate").innerText = p.date || "-";
-                    document.getElementById("instructions").innerText = p.instructions || "-";
+                    
+                    // แสดงวันที่: ถ้ามีใน QR code ให้เอาจาก QR code
+                    document.getElementById("prodDate").innerText = dateFromQR ? dateFromQR : (p.date || "-");
+                    
+                    // แสดงวิธีใช้และข้อควรระวัง (รองรับคีย์ภาษาไทยตามแผ่นงาน Data)
+                    document.getElementById("instructions").innerText = p.วิธีใช้ || p.instructions || "-";
+                    document.getElementById("precautions").innerText = p.ข้อควรระวัง || p.precautions || "-";
                     
                     if (p.image) {
                         document.getElementById("colorImg").src = `colors/${p.image}`;
