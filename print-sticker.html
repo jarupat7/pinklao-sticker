@@ -45,7 +45,27 @@
         @media print {
             @page { size: 78mm 103mm; margin: 0; }
             body { background: white; padding: 0; margin: 0; }
-            .admin-container { display: none !important; }
+            
+            /* ซ่อนส่วนแบนเนอร์และตัวควบคุมบนหน้าจอขณะพิมพ์ */
+            .header-banner, 
+            .control-panel { 
+                display: none !important; 
+            }
+            
+            /* รีเซ็ตเลย์เอาต์คอนเทนเนอร์เพื่อให้สติกเกอร์พิมพ์ได้เต็มหน้า */
+            .admin-container,
+            .workspace,
+            .preview-panel {
+                padding: 0 !important;
+                margin: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+                display: block !important;
+                width: 100% !important;
+                max-width: none !important;
+            }
+            
             #sticker { border: none; padding: 6mm; page-break-inside: avoid; page-break-after: always; display: flex !important; }
         }
     </style>
