@@ -22,49 +22,31 @@
             .loading-text { font-style: italic; color: #6b7280; font-size: 14px; margin-bottom: 10px; }
         }
 
-        /* โครงสร้างสติกเกอร์ แนวนอน 103mm x 78mm */
+        /* โครงสร้างสติกเกอร์ 78mm x 103mm */
         #sticker {
-            width: 103mm; height: 78mm; background: #ffffff; box-sizing: border-box;
-            padding: 5mm 6mm; display: flex; flex-direction: row; justify-content: space-between;
+            width: 78mm; height: 103mm; background: #ffffff; box-sizing: border-box;
+            padding: 6mm 6mm 12mm 6mm; display: flex; flex-direction: column; justify-content: space-between;
             align-items: center; border: 1px dashed #9ca3af; overflow: hidden; margin: 0 auto;
-            gap: 5mm;
         }
-        
-        .sticker-left-col {
-            width: 58mm;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            text-align: left;
-        }
-        
-        .sticker-right-col {
-            width: 32mm;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .logo-area { width: 100%; text-align: left; border-bottom: 2px solid #1e3a8a; padding-bottom: 1.5mm; margin-bottom: 2mm; }
-        .logo-text-main { font-size: 11pt; font-weight: 800; color: #1e3a8a; margin: 0; }
-        .logo-text-sub { font-size: 6pt; color: #4b5563; margin: 0.5mm 0 0 0; }
-        
-        .content-area { width: 100%; display: flex; flex-direction: column; justify-content: flex-start; flex-grow: 1; }
-        .product-name-label { font-size: 7.5pt; color: #6b7280; margin: 0; }
-        .product-name { font-size: 11pt; font-weight: 700; text-align: left; width: 100%; margin: 1mm 0 2mm 0; line-height: 1.3; word-wrap: break-word; }
-        .brand-name { font-size: 9.5pt; color: #1e3a8a; font-weight: bold; margin-bottom: 2mm; }
-        
-        .color-info-box { width: 100%; display: flex; align-items: center; padding: 0; margin-top: 1mm; }
-        .color-title-label { font-size: 7.5pt; color: #6b7280; margin-right: 2mm; font-weight: bold; }
-        .color-name-value { font-size: 9.5pt; font-weight: 700; color: #1e3a8a; }
-        
-        #qrcode img { width: 30mm !important; height: 30mm !important; }
-        .qty-badge, .sticker-footer { display: none !important; }
+        .logo-area { width: 100%; text-align: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 3mm; margin-bottom: 2mm; }
+        .logo-text-main { font-size: 13pt; font-weight: 800; color: #1e3a8a; margin: 0; }
+        .logo-text-sub { font-size: 7pt; color: #4b5563; margin: 0.5mm 0 0 0; }
+        .content-area { width: 100%; flex-grow: 1; display: flex; flex-direction: column; align-items: center; padding-top: 2mm; }
+        .product-name-label { font-size: 8pt; color: #6b7280; align-self: flex-start; margin: 0; }
+        .product-name { font-size: 12pt; font-weight: 700; text-align: left; width: 100%; margin: 1mm 0 1mm 0; line-height: 1.3; }
+        .brand-row { display: flex; justify-content: space-between; width: 100%; margin-bottom: 3mm; align-items: center; }
+        .brand-name { font-size: 10pt; color: #1e3a8a; font-weight: bold; }
+        .qty-badge { display: none !important; } /* ซ่อนแถบแสดงจำนวนบนหน้าสติกเกอร์ */
+        .color-info-box { width: 100%; display: flex; align-items: center; background: #f9fafb; border: 1px solid #e5e7eb; padding: 2mm; margin-bottom: 3mm; }
+        .color-swatch-preview { width: 10mm; height: 10mm; border: 1px solid #d1d5db; margin-right: 3mm; }
+        .color-text-details { display: flex; flex-direction: column; }
+        .color-title-label { font-size: 7pt; color: #6b7280; margin: 0; }
+        .color-name-value { font-size: 11pt; font-weight: 700; margin: 0; }
+        #qrcode img { width: 35mm !important; height: 35mm !important; } /* ปรับขนาด QR Code ให้เล็กลงเพื่อให้มีพื้นที่ว่างด้านล่างมากขึ้น */
+        .sticker-footer { display: none !important; } /* ซ่อนข้อความท้ายเพื่อเพิ่มพื้นที่ว่างใต้ QR Code */
 
         @media print {
-            @page { size: 103mm 78mm; margin: 0; }
+            @page { size: 78mm 103mm; margin: 0; }
             
             /* ซ่อนหน้าจอป้อนข้อมูล */
             .header-banner, 
@@ -88,14 +70,14 @@
                 position: absolute;
                 left: 0;
                 top: 0;
-                width: 103mm;
-                height: 78mm;
+                width: 78mm;
+                height: 103mm;
                 border: none !important;
-                padding: 5mm 6mm !important;
+                padding: 6mm 6mm 12mm 6mm !important;
                 margin: 0 !important;
                 box-sizing: border-box;
                 display: flex !important;
-                flex-direction: row;
+                flex-direction: column;
                 justify-content: space-between;
                 align-items: center;
                 background: #ffffff !important;
@@ -151,27 +133,29 @@
             </div>
             <div class="preview-panel">
                 <div id="sticker">
-                    <!-- ฝั่งซ้าย: ข้อมูลสินค้า -->
-                    <div class="sticker-left-col">
-                        <div class="logo-area">
-                            <div class="logo-text-main">ปิ่นเกล้าโลหะภัณฑ์</div>
-                            <div class="logo-text-sub">PINKLAO METAL CO., LTD.</div>
-                        </div>
-                        <div class="content-area">
-                            <p class="product-name-label">ชื่อสินค้า / PRODUCT:</p>
-                            <div class="product-name" id="lblTitle">-</div>
+                    <div class="logo-area">
+                        <div class="logo-text-main">ปิ่นเกล้าโลหะภัณฑ์</div>
+                        <div class="logo-text-sub">PINKLAO METAL CO., LTD.</div>
+                    </div>
+                    <div class="content-area">
+                        <p class="product-name-label">ชื่อสินค้า / PRODUCT:</p>
+                        <div class="product-name" id="lblTitle">-</div>
+                        
+                        <div class="brand-row">
                             <div class="brand-name" id="lblBrand">-</div>
-                            
-                            <div class="color-info-box">
-                                <span class="color-title-label">เฉดสี / COLOR:</span>
-                                <span class="color-name-value" id="lblColor">-</span>
+                            <div class="qty-badge" id="lblQty">จำนวน: -</div>
+                        </div>
+                        
+                        <div class="color-info-box">
+                            <div class="color-swatch-preview" id="swatchPreview"></div>
+                            <div class="color-text-details">
+                                <p class="color-title-label">เฉดสี / COLOR:</p>
+                                <p class="color-name-value" id="lblColor">-</p>
                             </div>
                         </div>
-                    </div>
-                    <!-- ฝั่งขวา: QR Code -->
-                    <div class="sticker-right-col">
                         <div id="qrcode"></div>
                     </div>
+                    <div class="sticker-footer">สแกนเพื่อตรวจสอบรายละเอียดสินค้าเพิ่มเติม</div>
                 </div>
             </div>
         </div>
@@ -271,11 +255,9 @@
             
             document.getElementById("lblTitle").innerText = "-";
             document.getElementById("lblBrand").innerText = "-";
-            const lblQty = document.getElementById("lblQty");
-            if (lblQty) lblQty.innerText = "จำนวน: -";
+            document.getElementById("lblQty").innerText = "จำนวน: -";
             document.getElementById("lblColor").innerText = "-";
-            const swatch = document.getElementById("swatchPreview");
-            if (swatch) swatch.style.backgroundColor = "transparent";
+            document.getElementById("swatchPreview").style.backgroundColor = "transparent";
             qr.clear();
         }
 
@@ -302,8 +284,7 @@
             
             const qty = document.getElementById("prodQty").value;
             const unit = getSelectedUnit();
-            const lblQty = document.getElementById("lblQty");
-            if (lblQty) lblQty.innerText = `จำนวน: ${qty} ${unit}`;
+            document.getElementById("lblQty").innerText = `จำนวน: ${qty} ${unit}`;
             
             const color = document.getElementById("colorName").value;
             document.getElementById("lblColor").innerText = color;
@@ -316,8 +297,7 @@
                     break;
                 }
             }
-            const swatch = document.getElementById("swatchPreview");
-            if (swatch) swatch.style.backgroundColor = hex;
+            document.getElementById("swatchPreview").style.backgroundColor = hex;
         }
 
         function generateStickerCode() {
